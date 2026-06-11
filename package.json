@@ -15,7 +15,7 @@
     "preview": "electron-vite preview",
     "build:win": "npm run build && electron-builder --win --x64",
     "build:unpack": "npm run build && electron-builder --dir",
-    "postinstall": "electron-builder install-app-deps",
+    "postinstall": "electron-builder install-app-deps || echo 'Native module rebuild skipped (non-fatal)'",
     "download-resources": "node scripts/download-resources.cjs",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "lint": "eslint . --ext .ts,.tsx"
