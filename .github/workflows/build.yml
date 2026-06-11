@@ -1,0 +1,61 @@
+name: Build and Release FLUX
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: app
+
+      - name: Download binary resources (mpv, ffmpeg, yt-dlp)
+        run: node scripts/download-resources.cjs
+        working-directory: app
+
+      - name: Build Electron app
+        run: npm run build:win
+        working-directory: app
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_ENV: production
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            app/dist/FLUX-Setup-*.exe
+            app/dist/latest.yml
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          name: FLUX ${{ github.ref_name }}
+          body: |
+            ## FLUX ${{ github.ref_name }}
+            
+            ### Installation
+            Download and run `FLUX-Setup-${{ github.ref_name }}.exe`
+            
+            ### What's New
+            See full changelog below.
+            
+            ### System Requirements
+            - Windows 10 / 11 (x64)
+            - 4GB RAM recommended
+            - DirectX 11 compatible GPU
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

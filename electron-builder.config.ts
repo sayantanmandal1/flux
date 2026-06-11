@@ -1,0 +1,85 @@
+import type { Configuration } from 'electron-builder'
+
+const config: Configuration = {
+  appId: 'com.fluxplayer.app',
+  productName: 'FLUX',
+  copyright: 'Copyright © 2024 sayantanmandal1',
+  directories: {
+    output: 'dist',
+    buildResources: 'build',
+  },
+  files: [
+    'out/**/*',
+    'resources/**/*',
+    '!resources/mpv/*.7z',
+    '!resources/mpv/*.zip',
+    '!resources/ffmpeg/*.zip',
+  ],
+  extraResources: [
+    {
+      from: 'resources',
+      to: 'resources',
+      filter: [
+        '**/*',
+        '!**/*.7z',
+        '!**/*.zip',
+      ],
+    },
+  ],
+  asar: true,
+  asarUnpack: [
+    'resources/**/*',
+    '**/node_modules/better-sqlite3/**/*',
+    '**/node_modules/koffi/**/*',
+    '**/node_modules/bindings/**/*',
+  ],
+  win: {
+    target: [
+      { target: 'nsis', arch: ['x64'] },
+    ],
+    icon: 'build/icon.ico',
+    artifactName: 'FLUX-Setup-${version}.exe',
+    publisherName: 'sayantanmandal1',
+    verifyUpdateCodeSignature: false,
+  },
+  nsis: {
+    oneClick: false,
+    allowToChangeInstallationDirectory: true,
+    allowElevation: true,
+    installerIcon: 'build/icon.ico',
+    uninstallerIcon: 'build/icon.ico',
+    installerHeaderIcon: 'build/icon.ico',
+    createDesktopShortcut: true,
+    createStartMenuShortcut: true,
+    shortcutName: 'FLUX',
+    include: 'build/installer.nsh',
+    perMachine: false,
+    deleteAppDataOnUninstall: false,
+    menuCategory: 'FLUX',
+    displayLanguageSelector: false,
+    multiLanguageInstaller: false,
+    warningsAsErrors: false,
+    // Custom pages handled via include script
+  },
+  fileAssociations: [
+    // Video
+    { ext: ['mkv', 'mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'ts', 'mts', 'm2ts', 'mpg', 'mpeg', 'm4v', 'vob', 'rmvb', 'rm', 'asf', '3gp', 'f4v', 'ogv', 'divx'], name: 'Video File', description: 'FLUX Video File', mimeType: 'video/*', role: 'Editor', isPackage: false },
+    // Audio
+    { ext: ['mp3', 'flac', 'aac', 'wav', 'ogg', 'opus', 'm4a', 'wma', 'ac3', 'dts', 'ape', 'alac', 'mka', 'tta', 'wv', 'aiff', 'aif'], name: 'Audio File', description: 'FLUX Audio File', mimeType: 'audio/*', role: 'Editor', isPackage: false },
+  ],
+  protocols: [
+    { name: 'FLUX URL', schemes: ['flux'], role: 'Editor' },
+  ],
+  publish: {
+    provider: 'github',
+    owner: 'sayantanmandal1',
+    repo: 'flux',
+    releaseType: 'release',
+  },
+  mac: {
+    // macOS support planned for future release
+    disabled: true,
+  } as Record<string, unknown>,
+}
+
+export default config

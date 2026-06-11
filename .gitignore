@@ -1,0 +1,12 @@
+node_modules/
+out/
+dist/
+.DS_Store
+*.log
+resources/mpv/mpv.exe
+resources/mpv/mpv-2.dll
+resources/ffmpeg/ffmpeg.exe
+resources/ffmpeg/ffprobe.exe
+resources/yt-dlp/yt-dlp.exe
+resources/mpv/*.zip
+resources/ffmpeg/*.zip

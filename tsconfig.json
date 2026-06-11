@@ -1,0 +1,3 @@
+{
+  "files": ["tsconfig.node.json", "tsconfig.web.json"]
+}
