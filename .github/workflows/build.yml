@@ -17,19 +17,16 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: app/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
-        working-directory: app
 
       - name: Download binary resources (mpv, ffmpeg, yt-dlp)
         run: node scripts/download-resources.cjs
-        working-directory: app
 
       - name: Build Electron app
         run: npm run build:win
-        working-directory: app
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_ENV: production
@@ -38,8 +35,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            app/dist/FLUX-Setup-*.exe
-            app/dist/latest.yml
+            dist/FLUX-Setup-*.exe
+            dist/latest.yml
           draft: false
           prerelease: false
           generate_release_notes: true
