@@ -46,6 +46,24 @@ jobs:
       - name: Download binary resources (mpv, ffmpeg, yt-dlp)
         run: node scripts/download-resources.cjs
 
+      - name: Generate proper 256x256 ICO from PNG (electron-builder requires 256x256 minimum)
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.Drawing
+          $png = "$PWD\resources\icons\icon.png"
+          $ico = "$PWD\build\icon.ico"
+          $bmp = [System.Drawing.Bitmap]::new($png)
+          $bmp256 = [System.Drawing.Bitmap]::new($bmp, 256, 256)
+          $ms = [System.IO.MemoryStream]::new()
+          $bmp256.Save($ms, [System.Drawing.Imaging.ImageFormat]::Png)
+          $data = $ms.ToArray()
+          $header = [byte[]](0x00,0x00,0x01,0x00,0x01,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x20,0x00)
+          $sizeBytes = [BitConverter]::GetBytes([uint32]$data.Length)
+          $offsetBytes = [BitConverter]::GetBytes([uint32](6 + 16))
+          $dirEntry = [byte[]](0,0,0,0,0x01,0x00,0x20,0x00) + $sizeBytes + $offsetBytes
+          [System.IO.File]::WriteAllBytes($ico, (([byte[]](0x00,0x00,0x01,0x00,0x01,0x00)) + $dirEntry + $data))
+          Write-Host "ICO generated: $([math]::Round((Get-Item $ico).Length/1KB,1)) KB"
+
       - name: Build Electron app
         run: npm run build:win
         env:
