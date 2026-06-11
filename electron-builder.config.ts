@@ -48,7 +48,7 @@ const config: Configuration = {
     allowElevation: true,
     installerIcon: 'resources/icons/icon.png',
     uninstallerIcon: 'resources/icons/icon.png',
-    installerHeaderIcon: 'build/icon.ico',
+    installerHeaderIcon: 'resources/icons/icon.png',
     createDesktopShortcut: true,
     createStartMenuShortcut: true,
     shortcutName: 'FLUX',

@@ -45,6 +45,15 @@ jobs:
           GYP_MSVS_VERSION: '2022'
         continue-on-error: true
 
+      - name: Sync package.json version to match git tag
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}".TrimStart('v')
+          $pkg = Get-Content package.json -Raw | ConvertFrom-Json
+          $pkg.version = $tag
+          $pkg | ConvertTo-Json -Depth 100 | Set-Content package.json
+          Write-Host "Version set to $tag"
+
       - name: Download binary resources (mpv, ffmpeg, yt-dlp)
         run: node scripts/download-resources.cjs
 
@@ -72,11 +81,20 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_ENV: production
 
+      - name: Copy installer as FLUX-Setup-latest.exe (permanent download URL)
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}".TrimStart('v')
+          $src = "dist\FLUX-Setup-$tag.exe"
+          Copy-Item $src "dist\FLUX-Setup-latest.exe"
+          Write-Host "Copied $src -> dist\FLUX-Setup-latest.exe"
+
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
         with:
           files: |
             dist/FLUX-Setup-*.exe
+            dist/*.blockmap
             dist/latest.yml
           draft: false
           prerelease: false
@@ -86,7 +104,7 @@ jobs:
             ## FLUX ${{ github.ref_name }}
             
             ### Installation
-            Download and run `FLUX-Setup-${{ github.ref_name }}.exe`
+            Download and run `FLUX-Setup-${{ github.ref_name }}.exe` (note: filename has no 'v' prefix, e.g. FLUX-Setup-1.0.8.exe)
             
             ### What's New
             See full changelog below.

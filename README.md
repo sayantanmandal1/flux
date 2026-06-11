@@ -12,7 +12,11 @@ A production-grade Windows media player built with Electron, mpv, FFmpeg, and yt
 
 ## Download
 
-**[⬇ Download FLUX for Windows](https://github.com/sayantanmandal1/flux/releases/latest)**
+**[⬇ Download FLUX for Windows](https://github.com/sayantanmandal1/flux/releases/latest/download/FLUX-Setup-latest.exe)**
+
+This link **always downloads the latest version** directly — no need to find it manually.
+
+> Browse all releases: [github.com/sayantanmandal1/flux/releases](https://github.com/sayantanmandal1/flux/releases)
 
 ---
 
