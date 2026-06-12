@@ -84,9 +84,9 @@ jobs:
               oneClick                      = $false
               allowToChangeInstallationDirectory = $true
               allowElevation                = $true
-              installerIcon                 = 'resources/icons/icon.png'
-              uninstallerIcon               = 'resources/icons/icon.png'
-              installerHeaderIcon           = 'resources/icons/icon.png'
+              installerIcon                 = 'build/icon.ico'
+              uninstallerIcon               = 'build/icon.ico'
+              installerHeaderIcon           = 'build/icon.ico'
               createDesktopShortcut         = $true
               createStartMenuShortcut       = $true
               shortcutName                  = 'FLUX'
