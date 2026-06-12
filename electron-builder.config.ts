@@ -1,6 +1,8 @@
-import type { Configuration } from 'electron-builder'
+// electron-builder configuration
+// Written as plain CJS (no TypeScript types) so it loads without ts-node.
+// module.exports is valid TypeScript and also loadable as raw CJS.
 
-const config: Configuration = {
+module.exports = {
   appId: 'com.fluxplayer.app',
   productName: 'FLUX',
   copyright: 'Copyright © 2024 sayantanmandal1',
@@ -10,15 +12,10 @@ const config: Configuration = {
   },
   files: [
     'out/**/*',
-    // Note: resources (mpv, ffmpeg, yt-dlp) are handled by extraResources below,
-    // NOT included here to avoid double-packing the binaries into asar.
     '!resources/**/*',
   ],
   extraResources: [
     {
-      // Copy the entire resources/ folder directly into Electron's resources/ dir.
-      // In the installed app: process.resourcesPath = <install>/resources/
-      // So mpv.exe lands at: <install>/resources/mpv/mpv.exe  ✓
       from: 'resources',
       to: '.',
       filter: [
@@ -38,9 +35,7 @@ const config: Configuration = {
     '**/node_modules/bindings/**/*',
   ],
   win: {
-    target: [
-      { target: 'nsis', arch: ['x64'] },
-    ],
+    target: [{ target: 'nsis', arch: ['x64'] }],
     icon: 'resources/icons/icon.png',
     artifactName: 'FLUX-Setup-${version}.exe',
     publisherName: 'sayantanmandal1',
@@ -60,16 +55,23 @@ const config: Configuration = {
     perMachine: false,
     deleteAppDataOnUninstall: false,
     menuCategory: 'FLUX',
-    displayLanguageSelector: false,
-    multiLanguageInstaller: false,
     warningsAsErrors: false,
-    // Custom pages handled via include script
   },
   fileAssociations: [
-    // Video
-    { ext: ['mkv', 'mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'ts', 'mts', 'm2ts', 'mpg', 'mpeg', 'm4v', 'vob', 'rmvb', 'rm', 'asf', '3gp', 'f4v', 'ogv', 'divx'], name: 'Video File', description: 'FLUX Video File', mimeType: 'video/*', role: 'Editor', isPackage: false },
-    // Audio
-    { ext: ['mp3', 'flac', 'aac', 'wav', 'ogg', 'opus', 'm4a', 'wma', 'ac3', 'dts', 'ape', 'alac', 'mka', 'tta', 'wv', 'aiff', 'aif'], name: 'Audio File', description: 'FLUX Audio File', mimeType: 'audio/*', role: 'Editor', isPackage: false },
+    {
+      ext: ['mkv','mp4','avi','mov','wmv','flv','webm','ts','mts','m2ts','mpg','mpeg','m4v','vob','rmvb','rm','asf','3gp','f4v','ogv','divx'],
+      name: 'Video File',
+      description: 'FLUX Video File',
+      mimeType: 'video/*',
+      role: 'Editor',
+    },
+    {
+      ext: ['mp3','flac','aac','wav','ogg','opus','m4a','wma','ac3','dts','ape','alac','mka','tta','wv','aiff','aif'],
+      name: 'Audio File',
+      description: 'FLUX Audio File',
+      mimeType: 'audio/*',
+      role: 'Editor',
+    },
   ],
   protocols: [
     { name: 'FLUX URL', schemes: ['flux'], role: 'Editor' },
@@ -80,10 +82,4 @@ const config: Configuration = {
     repo: 'flux',
     releaseType: 'release',
   },
-  mac: {
-    // macOS support planned for future release
-    disabled: true,
-  } as Record<string, unknown>,
-}
-
-export default config
+};
