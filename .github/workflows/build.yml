@@ -136,6 +136,14 @@ jobs:
           [System.IO.File]::WriteAllBytes($ico, (([byte[]](0x00,0x00,0x01,0x00,0x01,0x00)) + $dirEntry + $data))
           Write-Host "ICO generated: $([math]::Round((Get-Item $ico).Length/1KB,1)) KB"
 
+      - name: Copy config to .js so electron-builder loads it without ts-node
+        shell: pwsh
+        run: |
+          # electron-builder loads .js with require() directly (no transpiler needed).
+          # .ts requires jiti/ts-node which is not installed in CI.
+          Copy-Item electron-builder.config.ts electron-builder.config.js -Force
+          Write-Host "electron-builder.config.js created"
+
       - name: Build Electron app
         run: npm run build:win
         env:
