@@ -31,7 +31,12 @@ const config: Configuration = {
       ],
     },
   ],
-  asar: true,\n  asarUnpack: [\n    // Native node modules must be unpacked from asar to load correctly\n    '**/node_modules/better-sqlite3/**/*',\n    '**/node_modules/koffi/**/*',\n    '**/node_modules/bindings/**/*',\n  ],
+  asar: true,
+  asarUnpack: [
+    '**/node_modules/better-sqlite3/**/*',
+    '**/node_modules/koffi/**/*',
+    '**/node_modules/bindings/**/*',
+  ],
   win: {
     target: [
       { target: 'nsis', arch: ['x64'] },
