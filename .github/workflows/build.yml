@@ -84,10 +84,17 @@ jobs:
       - name: Copy installer as FLUX-Setup-latest.exe (permanent download URL)
         shell: pwsh
         run: |
-          $tag = "${{ github.ref_name }}".TrimStart('v')
-          $src = "dist\FLUX-Setup-$tag.exe"
-          Copy-Item $src "dist\FLUX-Setup-latest.exe"
-          Write-Host "Copied $src -> dist\FLUX-Setup-latest.exe"
+          Write-Host "Contents of dist/:"
+          Get-ChildItem dist | Select-Object Name | Format-Table -HideTableHeaders
+          # Find whatever .exe electron-builder actually produced
+          $exe = Get-ChildItem dist -Filter "*.exe" | Where-Object { $_.Name -notlike "*latest*" -and $_.Name -notlike "*uninstaller*" -and $_.Name -notlike "*elevate*" } | Select-Object -First 1
+          if ($exe) {
+            Copy-Item $exe.FullName "dist\FLUX-Setup-latest.exe"
+            Write-Host "Copied $($exe.Name) -> dist\FLUX-Setup-latest.exe"
+          } else {
+            Write-Host "WARNING: No installer exe found in dist/"
+            exit 1
+          }
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
