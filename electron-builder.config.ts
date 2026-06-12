@@ -10,29 +10,28 @@ const config: Configuration = {
   },
   files: [
     'out/**/*',
-    'resources/**/*',
-    '!resources/mpv/*.7z',
-    '!resources/mpv/*.zip',
-    '!resources/ffmpeg/*.zip',
+    // Note: resources (mpv, ffmpeg, yt-dlp) are handled by extraResources below,
+    // NOT included here to avoid double-packing the binaries into asar.
+    '!resources/**/*',
   ],
   extraResources: [
     {
+      // Copy the entire resources/ folder directly into Electron's resources/ dir.
+      // In the installed app: process.resourcesPath = <install>/resources/
+      // So mpv.exe lands at: <install>/resources/mpv/mpv.exe  ✓
       from: 'resources',
-      to: 'resources',
+      to: '.',
       filter: [
         '**/*',
         '!**/*.7z',
         '!**/*.zip',
+        '!**/7za.exe',
+        '!**/7z.dll',
+        '!**/7za.chm',
       ],
     },
   ],
-  asar: true,
-  asarUnpack: [
-    'resources/**/*',
-    '**/node_modules/better-sqlite3/**/*',
-    '**/node_modules/koffi/**/*',
-    '**/node_modules/bindings/**/*',
-  ],
+  asar: true,\n  asarUnpack: [\n    // Native node modules must be unpacked from asar to load correctly\n    '**/node_modules/better-sqlite3/**/*',\n    '**/node_modules/koffi/**/*',\n    '**/node_modules/bindings/**/*',\n  ],
   win: {
     target: [
       { target: 'nsis', arch: ['x64'] },

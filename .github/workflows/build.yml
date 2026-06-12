@@ -55,7 +55,68 @@ jobs:
           Write-Host "Version set to $tag"
 
       - name: Download binary resources (mpv, ffmpeg, yt-dlp)
-        run: node scripts/download-resources.cjs
+        shell: pwsh
+        run: |
+          $ProgressPreference = 'SilentlyContinue'
+          New-Item -Force -ItemType Directory resources\mpv, resources\ffmpeg, "resources\yt-dlp", resources\icons | Out-Null
+
+          # ── yt-dlp ──────────────────────────────────────────────────────────
+          if (-not (Test-Path "resources\yt-dlp\yt-dlp.exe")) {
+            Write-Host "Downloading yt-dlp..."
+            Invoke-WebRequest "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" -OutFile "resources\yt-dlp\yt-dlp.exe"
+            Write-Host "✓ yt-dlp: $([math]::Round((Get-Item 'resources\yt-dlp\yt-dlp.exe').Length/1MB,1)) MB"
+          }
+
+          # ── ffmpeg ───────────────────────────────────────────────────────────
+          if (-not (Test-Path "resources\ffmpeg\ffmpeg.exe")) {
+            Write-Host "Downloading ffmpeg..."
+            $rel = Invoke-RestMethod "https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/latest"
+            $asset = $rel.assets | Where-Object { $_.name -match 'ffmpeg-master-latest-win64-gpl\.zip$' } | Select-Object -First 1
+            Invoke-WebRequest $asset.browser_download_url -OutFile "resources\ffmpeg\ffmpeg.zip"
+            Expand-Archive "resources\ffmpeg\ffmpeg.zip" "resources\ffmpeg" -Force
+            $bin = Get-ChildItem "resources\ffmpeg" -Recurse -Filter "ffmpeg.exe" | Select-Object -First 1
+            Move-Item $bin.FullName "resources\ffmpeg\ffmpeg.exe" -Force
+            $probe = Get-ChildItem "resources\ffmpeg" -Recurse -Filter "ffprobe.exe" | Select-Object -First 1
+            Move-Item $probe.FullName "resources\ffmpeg\ffprobe.exe" -Force
+            Get-ChildItem "resources\ffmpeg" -Directory | Remove-Item -Recurse -Force
+            Remove-Item "resources\ffmpeg\ffmpeg.zip" -Force
+            Write-Host "✓ ffmpeg: $([math]::Round((Get-Item 'resources\ffmpeg\ffmpeg.exe').Length/1MB,1)) MB"
+          }
+
+          # ── mpv ──────────────────────────────────────────────────────────────
+          if (-not (Test-Path "resources\mpv\mpv.exe")) {
+            Write-Host "Downloading mpv..."
+            $rel = Invoke-RestMethod "https://api.github.com/repos/zhongfly/mpv-winbuild/releases/latest"
+            $asset = $rel.assets | Where-Object { $_.name -match 'mpv-x86_64.*\.7z$' } | Select-Object -First 1
+            Invoke-WebRequest $asset.browser_download_url -OutFile "resources\mpv\mpv.7z"
+            # Download 7za to extract
+            Invoke-WebRequest "https://7-zip.org/a/7za920.zip" -OutFile "resources\mpv\7za.zip"
+            Expand-Archive "resources\mpv\7za.zip" "resources\mpv" -Force
+            & "resources\mpv\7za.exe" e "resources\mpv\mpv.7z" mpv.exe -o"resources\mpv" -y | Out-Null
+            Remove-Item "resources\mpv\mpv.7z","resources\mpv\7za.zip","resources\mpv\7za.exe","resources\mpv\7z.dll","resources\mpv\7za.chm" -ErrorAction SilentlyContinue
+            Write-Host "✓ mpv: $([math]::Round((Get-Item 'resources\mpv\mpv.exe').Length/1MB,1)) MB"
+          }
+
+      - name: Verify binaries downloaded (fail fast if missing)
+        shell: pwsh
+        run: |
+          $required = @(
+            "resources\mpv\mpv.exe",
+            "resources\ffmpeg\ffmpeg.exe",
+            "resources\ffmpeg\ffprobe.exe",
+            "resources\yt-dlp\yt-dlp.exe"
+          )
+          $failed = $false
+          foreach ($f in $required) {
+            if (Test-Path $f) {
+              $mb = [math]::Round((Get-Item $f).Length/1MB, 1)
+              Write-Host "✓ $f ($mb MB)"
+            } else {
+              Write-Host "✗ MISSING: $f"
+              $failed = $true
+            }
+          }
+          if ($failed) { exit 1 }
 
       - name: Generate proper 256x256 ICO from PNG (electron-builder requires 256x256 minimum)
         shell: pwsh
@@ -80,6 +141,26 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_ENV: production
+
+      - name: Verify binaries included in package (fail if mpv missing)
+        shell: pwsh
+        run: |
+          # extraResources copies to process.resourcesPath directly (not in a subfolder)
+          # So the path in win-unpacked is: dist\win-unpacked\resources\mpv\mpv.exe
+          $unpacked = "dist\win-unpacked\resources"
+          $checks = @("mpv\mpv.exe","ffmpeg\ffmpeg.exe","ffmpeg\ffprobe.exe","yt-dlp\yt-dlp.exe")
+          $failed = $false
+          foreach ($f in $checks) {
+            $full = Join-Path $unpacked $f
+            if (Test-Path $full) {
+              $mb = [math]::Round((Get-Item $full).Length/1MB,1)
+              Write-Host "✓ Packaged: $f ($mb MB)"
+            } else {
+              Write-Host "✗ NOT PACKAGED: $full"
+              $failed = $true
+            }
+          }
+          if ($failed) { Write-Host "ERROR: Binaries missing from package!"; exit 1 }
 
       - name: Copy installer as FLUX-Setup-latest.exe (permanent download URL)
         shell: pwsh
