@@ -45,14 +45,71 @@ jobs:
           GYP_MSVS_VERSION: '2022'
         continue-on-error: true
 
-      - name: Sync package.json version to match git tag
+      - name: Set version and inject electron-builder config into package.json
         shell: pwsh
         run: |
+          # The 'build' key in package.json has highest priority in electron-builder.
+          # This avoids ALL config file loading (no ts-node, no jiti, no module issues).
           $tag = "${{ github.ref_name }}".TrimStart('v')
           $pkg = Get-Content package.json -Raw | ConvertFrom-Json
           $pkg.version = $tag
-          $pkg | ConvertTo-Json -Depth 100 | Set-Content package.json
-          Write-Host "Version set to $tag"
+
+          $buildCfg = [PSCustomObject]@{
+            appId               = 'com.fluxplayer.app'
+            productName         = 'FLUX'
+            copyright           = 'Copyright (c) 2024 sayantanmandal1'
+            directories         = [PSCustomObject]@{ output = 'dist'; buildResources = 'build' }
+            files               = @('out/**/*', '!resources/**/*')
+            extraResources      = @(
+              [PSCustomObject]@{
+                from   = 'resources'
+                to     = '.'
+                filter = @('**/*','!**/*.7z','!**/*.zip','!**/7za.exe','!**/7z.dll','!**/7za.chm')
+              }
+            )
+            asar                = $true
+            asarUnpack          = @(
+              '**/node_modules/better-sqlite3/**/*',
+              '**/node_modules/koffi/**/*',
+              '**/node_modules/bindings/**/*'
+            )
+            win = [PSCustomObject]@{
+              target                  = @([PSCustomObject]@{ target = 'nsis'; arch = @('x64') })
+              icon                    = 'resources/icons/icon.png'
+              artifactName            = 'FLUX-Setup-${version}.exe'
+              publisherName           = 'sayantanmandal1'
+              verifyUpdateCodeSignature = $false
+            }
+            nsis = [PSCustomObject]@{
+              oneClick                      = $false
+              allowToChangeInstallationDirectory = $true
+              allowElevation                = $true
+              installerIcon                 = 'resources/icons/icon.png'
+              uninstallerIcon               = 'resources/icons/icon.png'
+              installerHeaderIcon           = 'resources/icons/icon.png'
+              createDesktopShortcut         = $true
+              createStartMenuShortcut       = $true
+              shortcutName                  = 'FLUX'
+              include                       = 'build/installer.nsh'
+              perMachine                    = $false
+              deleteAppDataOnUninstall      = $false
+              menuCategory                  = 'FLUX'
+              warningsAsErrors              = $false
+            }
+            publish = [PSCustomObject]@{
+              provider    = 'github'
+              owner       = 'sayantanmandal1'
+              repo        = 'flux'
+              releaseType = 'release'
+            }
+          }
+
+          Add-Member -InputObject $pkg -Force -NotePropertyName 'build' -NotePropertyValue $buildCfg
+          $pkg | ConvertTo-Json -Depth 20 | Set-Content package.json -Encoding UTF8
+          Write-Host "Version: $tag"
+          Write-Host "productName: $((Get-Content package.json | ConvertFrom-Json).build.productName)"
+          Write-Host "oneClick: $((Get-Content package.json | ConvertFrom-Json).build.nsis.oneClick)"
+          Write-Host "extraResources.to: $((Get-Content package.json | ConvertFrom-Json).build.extraResources[0].to)"
 
       - name: Download binary resources (mpv, ffmpeg, yt-dlp)
         shell: pwsh
@@ -169,14 +226,6 @@ jobs:
           $dirEntry = [byte[]](0,0,0,0,0x01,0x00,0x20,0x00) + $sizeBytes + $offsetBytes
           [System.IO.File]::WriteAllBytes($ico, (([byte[]](0x00,0x00,0x01,0x00,0x01,0x00)) + $dirEntry + $data))
           Write-Host "ICO generated: $([math]::Round((Get-Item $ico).Length/1KB,1)) KB"
-
-      - name: Copy config to .js so electron-builder loads it without ts-node
-        shell: pwsh
-        run: |
-          # electron-builder loads .js with require() directly (no transpiler needed).
-          # .ts requires jiti/ts-node which is not installed in CI.
-          Copy-Item electron-builder.config.ts electron-builder.config.js -Force
-          Write-Host "electron-builder.config.js created"
 
       - name: Build Electron app
         run: npm run build:win
